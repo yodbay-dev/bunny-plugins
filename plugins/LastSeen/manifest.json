@@ -1,0 +1,13 @@
+{
+    "name": "LastSeen",
+    "description": "Zeigt bei DM-Kontakten an, wann sie zuletzt online waren, seit wann sie abwesend sind oder wie lange sie schon online sind. Mit Statusglocke pro Kontakt (Benachrichtigung + Sound bei Statuswechsel) und optionalem Tipp-Sound. Hinweis: Es werden nur Statuswechsel erfasst, die live beobachtet werden, während die App läuft – es gibt keine historischen Daten von Discord.",
+    "authors": [
+        {
+            "name": "Koewi"
+        }
+    ],
+    "main": "src/index.ts",
+    "vendetta": {
+        "icon": "ic_clock"
+    }
+}

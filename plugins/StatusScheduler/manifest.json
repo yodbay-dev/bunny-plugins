@@ -1,0 +1,13 @@
+{
+    "name": "StatusScheduler",
+    "description": "Ändert den eigenen Online-Status automatisch nach einem täglichen Zeitplan (z. B. 23:00 Unsichtbar, 08:00 Online). Funktioniert nur, solange die App läuft; verpasste Zeitpunkte werden beim nächsten App-Start automatisch nachgeholt.",
+    "authors": [
+        {
+            "name": "Koewi"
+        }
+    ],
+    "main": "src/index.ts",
+    "vendetta": {
+        "icon": "ic_clock"
+    }
+}

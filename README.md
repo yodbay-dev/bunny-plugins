@@ -1,0 +1,42 @@
+# Bunny-Plugins: LastSeen & StatusScheduler
+
+Zwei Plugins für **Bunny** (Community-Mod für die Discord-Mobile-App, Vendetta-Nachfolger).
+Sie funktionieren ebenso in **Revenge** (dem aktiv gepflegten Bunny-Nachfolger), da beide das
+Vendetta-Plugin-Format laden.
+
+## Plugins
+
+### LastSeen
+Zeigt bei DM-Kontakten an, wann sie zuletzt online waren, seit wann sie abwesend sind oder wie
+lange sie schon online sind (Long-Press auf eine DM in der Nachrichtenliste, optional zusätzlich
+als Toast beim Öffnen der DM). Pro Kontakt aktivierbare „Statusglocke": Benachrichtigung + Sound
+bei jedem beobachteten Statuswechsel, individueller Sound pro Kontakt (URL oder Datei), optionaler
+Tipp-Sound.
+
+**Wichtig:** Discord liefert keine historischen Präsenzdaten. Erfasst wird nur, was live
+beobachtet wird, während die App mit aktivem Plugin läuft.
+
+### StatusScheduler
+Ändert den eigenen Online-Status automatisch nach einem täglichen Zeitplan
+(Standard: 23:00 → Unsichtbar, 08:00 → Online). Verpasste Zeitpunkte werden beim nächsten
+App-Start nachgeholt (inkl. Tages-Wrap-around). Funktioniert nur, solange die App läuft.
+
+## Installation in der App
+
+1. Dieses Repo auf GitHub pushen und GitHub Pages aktivieren (der mitgelieferte Workflow
+   deployt `dist/` automatisch auf den Branch `gh-pages`).
+2. In Bunny/Revenge: **Einstellungen → Plugins → „+"** und eine dieser URLs einfügen:
+
+```
+https://DEIN_GITHUB_NAME.github.io/REPO_NAME/LastSeen
+https://DEIN_GITHUB_NAME.github.io/REPO_NAME/StatusScheduler
+```
+
+## Lokal bauen
+
+```
+pnpm i
+node build.mjs
+```
+
+Ergebnis liegt in `dist/<PluginName>/` (`index.js` + `manifest.json` + statische Dateien).

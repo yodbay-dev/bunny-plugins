@@ -1,0 +1,41 @@
+name: Build and deploy
+
+on:
+    push:
+        branches: [main, master]
+
+jobs:
+    deploy:
+        runs-on: ubuntu-latest
+        permissions:
+          contents: write
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Prepare environment
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "20"
+
+            - run: npm install --global pnpm
+
+            - name: Install deps
+              run: pnpm i
+
+            - name: Build plugin(s)
+              run: node ./build.mjs
+
+            - name: Copy additional files
+              run: |
+                  cp README.md dist/README.md
+                  printf -- "---\npermalink: /404.html\n---\n" > dist/404.md
+                  printf -- "> **Hinweis:** Diese URL ist kein Webinhalt. Kopiere die Link-Adresse und füge sie in Bunny unter Plugins ein.\n\n" >> dist/404.md
+                  cat README.md >> dist/404.md
+
+            - name: Deploy to GitHub Pages
+              uses: peaceiris/actions-gh-pages@v4
+              with:
+                  github_token: ${{ secrets.GITHUB_TOKEN }}
+                  publish_dir: ./dist
+                  enable_jekyll: true
