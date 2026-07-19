@@ -119,6 +119,15 @@ export default function Settings() {
                     value={!!storage.notify}
                     onValueChange={(v: boolean) => { storage.notify = v; }}
                 />
+                <FormSwitchRow
+                    label="Zeitplan durchsetzen"
+                    subLabel="Der laut Zeitplan zuletzt festgelegte Status wird bei jedem Check erneut angewendet, auch wenn er zwischendurch manuell geändert wurde – bis die nächste Regel fällig wird"
+                    value={!!storage.enforce}
+                    onValueChange={(v: boolean) => {
+                        storage.enforce = v;
+                        if (v && storage.enabled) tick();
+                    }}
+                />
             </FormSection>
 
             <FormSection title={`Zeitplan (täglich, lokale Gerätezeit) – ${rules.length} Regeln`}>

@@ -1,5 +1,5 @@
 import { logger } from "@vendetta";
-import { findByPropsAll } from "@vendetta/metro";
+import { findByPropsAll, findByStoreName } from "@vendetta/metro";
 import { storage } from "@vendetta/plugin";
 import { getAssetIDByName } from "@vendetta/ui/assets";
 import { showToast } from "@vendetta/ui/toasts";
@@ -87,12 +87,41 @@ function dueKey(due: { rule: Rule; dayOffset: 0 | 1; }, now = new Date()): strin
     return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}#${due.rule.time}#${due.rule.status}`;
 }
 
+/**
+ * Liest den aktuell eingestellten eigenen Status. null = nicht lesbar
+ * (z. B. Modul direkt nach App-Start noch nicht bereit).
+ */
+export function readOwnStatus(): ScheduledStatus | null {
+    try {
+        const store = findByStoreName("UserSettingsProtoStore");
+        const v = store?.settings?.status?.status?.value;
+        if (typeof v === "string" && v) return v as ScheduledStatus;
+    } catch { /* Fallback unten */ }
+    try {
+        const id = findByStoreName("UserStore")?.getCurrentUser?.()?.id;
+        const st = id ? findByStoreName("PresenceStore")?.getStatus?.(id) : null;
+        // Die eigene Präsenz meldet "offline", wenn man unsichtbar ist
+        if (typeof st === "string" && st) return (st === "offline" ? "invisible" : st) as ScheduledStatus;
+    } catch { /* nicht lesbar */ }
+    return null;
+}
+
 let interval: ReturnType<typeof setInterval> | undefined;
+let lastErrorKey: string | undefined; // Fehler-Toast nur einmal pro fälliger Regel, nicht jede Minute
 
 /**
- * Minütlicher Check. Der Status wird NUR gesetzt, wenn sich die aktuell fällige
- * Regel geändert hat – dadurch wird ein manuell gewählter Status nicht bei jedem
- * Tick überschrieben, sondern erst wieder zum nächsten Regel-Zeitpunkt.
+ * Minütlicher Check.
+ *
+ * Standard: Der Status wird nur beim ÜBERGANG auf eine neu fällige Regel gesetzt –
+ * ein manuell gewählter Status bleibt bis zum nächsten Regel-Zeitpunkt unangetastet.
+ *
+ * Mit "Zeitplan durchsetzen" (storage.enforce): Bei jedem Tick wird geprüft, ob der
+ * aktuelle Status noch der fälligen Regel entspricht, und sonst zurückgesetzt.
+ *
+ * Wichtig (Bugfix): storage.lastApplied wird erst NACH einem erfolgreichen
+ * Lese-/Schreibversuch gesetzt. Schlägt der Versuch fehl, bleibt die Regel
+ * unmarkiert und der nächste Tick (~1 Min.) versucht es automatisch erneut –
+ * ein einzelner Fehlschlag kann den Zeitplan nie für den Rest des Tages blockieren.
  */
 export function tick() {
     try {
@@ -101,18 +130,31 @@ export function tick() {
         if (!due) return;
 
         const key = dueKey(due);
-        if (storage.lastApplied === key) return;
-        storage.lastApplied = key;
+        const isNewRule = storage.lastApplied !== key;
+        if (!isNewRule && !storage.enforce) return;
 
-        if (setOwnStatus(due.rule.status)) {
+        const target = due.rule.status;
+        const current = readOwnStatus();
+
+        // Nur schreiben, wenn der Zielwert vom aktuell gelesenen Status abweicht.
+        if (current !== null && current === target) {
+            storage.lastApplied = key; // erfolgreicher Lesevorgang: Ziel steht bereits
+            return;
+        }
+        if (!isNewRule && current === null) return; // Durchsetzen ohne lesbaren Ist-Wert: nichts erzwingen
+
+        if (setOwnStatus(target)) {
+            storage.lastApplied = key;
+            lastErrorKey = undefined;
             if (storage.notify) {
                 showToast(
-                    `Status automatisch auf ${STATUS_LABELS[due.rule.status]} gesetzt (Regel ${due.rule.time})`,
+                    `Status automatisch auf ${STATUS_LABELS[target]} gesetzt (Regel ${due.rule.time})`,
                     getAssetIDByName("ic_clock")
                 );
             }
-        } else {
-            showToast("StatusScheduler: Status-Modul nicht gefunden – Status wurde nicht geändert");
+        } else if (lastErrorKey !== key) {
+            lastErrorKey = key;
+            showToast("StatusScheduler: Status konnte nicht gesetzt werden – neuer Versuch in 1 Minute");
         }
     } catch (e) {
         logger.error("StatusScheduler: Tick fehlgeschlagen", e);

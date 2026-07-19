@@ -7,6 +7,7 @@ export default {
     onLoad() {
         storage.enabled ??= false;  // Standard: AUS
         storage.notify ??= true;
+        storage.enforce ??= false;  // "Zeitplan durchsetzen": Standard AUS
         storage.rules ??= [
             { id: "default-night", time: "23:00", status: "invisible" },
             { id: "default-morning", time: "08:00", status: "online" },
